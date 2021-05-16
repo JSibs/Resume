@@ -1,0 +1,202 @@
+(function ($) {
+    "use strict";
+
+    // jQuery Plugin For Loan Switcher //
+    $.fn.ngsProductSwitcher = function () {
+        $.each(this, function (index, element) {
+            const toggler = {
+                target: null,
+                context: null, // Element
+                container: null,
+                // CustomEvent //
+                customEventHandler: function ( event, params ) {
+                    params = params || { bubbles: false, cancelable: false, detail: undefined };
+                    const evt = document.createEvent( 'CustomEvent' );
+                    evt.initCustomEvent( event, params.bubbles, params.cancelable, params.detail );
+                    return evt;
+                },
+                declareEvent: function (eventName, params) {
+                    return this.customEventHandler(eventName, params);
+                },
+                initiateEvent: function (eventName, element, params) {
+                    if (element !== null && element !== undefined) {
+                        return element.dispatchEvent(
+                            this.declareEvent(
+                                eventName, {
+                                    bubbles: true,
+                                    cancelable: true,
+                                    detail: params
+                                }
+                            )
+                        );
+                    }
+
+                    return true;
+                },
+                // Show Target //
+                showTarget: function (noState) {
+                    this.show(
+                        this.target,
+                        noState ? null : {
+                            source: 'ngsProductSwitcher'
+                        }
+                    );
+                },
+                // Hide Container //
+                hideContainer: function (callback) {
+                    var container = this.container;
+                    this.hide(container, callback);
+                },
+                // Show Container //
+                showContainer: function () {
+                    if (this.initiateEvent(
+                        "ALREFI::Common::ToggledWrapper",
+                        this.container[0]
+                    )) {
+                        this.show(
+                            this.container
+                        );
+                    };
+                },
+                // Hide Target //
+                hideTarget: function () {
+                    var mainContext = this;
+                    this.hide(mainContext.target, function () {
+                        mainContext.showContainer();
+                    });
+                },
+                // Reusable Hide //
+                hide: function (target, callback) {
+                    if (target)
+                    {
+                        var containerDisplay = setTimeout(function () {
+                            target.addClass('toggled-hidden');
+                            if (callback)
+                            {
+                                callback();
+                            }
+                            clearTimeout(containerDisplay);
+                        }, 250);
+                        target.addClass('toggled');
+                        return;
+                    }
+
+                    if (callback)
+                    {
+                        callback();
+                    }
+                },
+                // Reusable Show //
+                show: function (target, state) {
+                    target.removeClass('toggled-hidden');
+                    target.removeClass('toggled');
+                    if (state) {
+                        window.history.pushState(state, "", "#" + target.attr('id'));
+                    }
+                },
+                // Un toggle //
+                onPopState: function () {
+                    this.hideTarget();
+                },
+                // Event Handlers //
+                eventHandlers: function () {
+                    var mainContext = this;
+                    $(mainContext.context).on("click", function (e) {
+                        if (mainContext.initiateEvent(
+                            "ALREFI::Common::ToggledWrapper",
+                            mainContext.target[0]
+                            )) {
+                            mainContext.hideContainer(function () {
+                                mainContext.showTarget();
+                            });
+                        }
+                    });
+
+                    window.addEventListener("popstate", function (e) {
+                        if (e.state === null)
+                        {
+                            mainContext.onPopState();
+                        }
+                    });
+
+                    if (window.location && window.location.hash)
+                    {
+                        var currentHash = window.location.hash.split('#');
+                        currentHash = currentHash[currentHash.length - 1];
+                        if ( currentHash == mainContext.target.attr('id') )
+                        {
+                            if (mainContext.initiateEvent(
+                                "ALREFI::Common::ToggledWrapper",
+                                mainContext.target[0]
+                            )) {
+                                mainContext.hideContainer(function () {
+                                    mainContext.showTarget(true);
+                                });
+                            }
+                        }
+                    }
+                },
+                // Initializer //
+                init: function () {
+                    var mainContext = this;
+                    mainContext.target = mainContext.context.data("toggleTarget")
+                    if (mainContext.target && $(mainContext.target).length)
+                    {
+                        mainContext.target = $(mainContext.target);
+                        // Init target container //
+                        // Add transition classes //
+                        mainContext.target.removeClass('hidden');
+                        mainContext.target.addClass('toggled');
+                        mainContext.target.addClass('toggled-hidden');
+                        mainContext.target.addClass('toggle-container');
+
+                        // Remove href if detected (we still want href to be there so it can be crawled) //
+                        if (mainContext.context.attr('href'))
+                        {
+                            // Replacing with javascript:void(0); to prevent href //
+                            mainContext.context.attr('href', 'javascript:void(0);');
+                        }
+
+                        // Identify the container that will be toggle hide //
+                        // Once toggle the target //
+                        if (mainContext.context.data('toggleContainer'))
+                        {
+                            var container = mainContext.context.data('toggleContainer');
+                            if (container && $(container).length)
+                            {
+                                mainContext.container = $(container);
+                                mainContext.container.addClass('toggle-container');
+                            }
+                        }
+                        mainContext.eventHandlers();
+                        $(mainContext.context).data('ngsToggler', this);
+                    }
+                }
+            };
+
+            toggler.context = $(element);
+            toggler.init();
+        });
+    };
+
+    $.fn.initiateOnReady = function(func) {
+        var context = jQuery(this);
+        if (context.length) {
+          func(this);
+        } else {
+          var to = setTimeout(function() {
+            context.initiateOnReady(func);
+            clearTimeout(to);
+          }, 1000);
+        }
+    }
+
+    $("[data-toggle-target]").ngsProductSwitcher();
+
+    $("#auto-loan-refi-widget").on("ALREFI::Common::ToggledWrapper", function (e) {
+        $("refi-entry-widget-component[ng-version]").initiateOnReady(function (target) {
+            target[0].checkEntryIfReady();
+            return !target[0].entryIsReady;
+        });
+    });
+})(jQuery);

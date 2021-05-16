@@ -1,0 +1,46 @@
+.loan-switcher {
+    max-width: 505px;
+    margin-top: 45px;
+}
+
+.loan-switcher .vc_column_container > .vc_column-inner {
+    background: #FFF;
+    padding: 15px;
+    border-radius: 5px;
+    width: 323px;
+    height: 288px;
+    float: right;
+}
+
+.loan-switcher .vc_column_container > .vc_column-inner .wpb_wrapper {
+    text-align: center;
+}
+
+.loan-switcher .vc_btn3.vc_btn3-size-md {
+    width: 213px;
+    height: 48px;
+    font-size: 18px;
+    margin: auto;
+    padding-left: 0px;
+    padding-right: 0px;
+    line-height: 1;
+}
+
+.toggle-container {
+    transition: opacity 0.25s;
+}
+
+.toggle-container.toggled {
+    opacity: 0;
+}
+
+.toggle-container.toggled-hidden {
+    display: none !important;
+}
+
+.refi-elements {
+    opacity: 0;
+}
+.refi-elements[ng-version] {
+    opacity: 1;
+}
